@@ -20,7 +20,7 @@ class _StorageHomeState extends State<StorageHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Image Storage'),
+        title: const Text('Image Storage'),
       ),
       body: Container(
         child: Column(
@@ -48,6 +48,29 @@ class _StorageHomeState extends State<StorageHome> {
                     icon: const Icon(Icons.browse_gallery_outlined)),
               ],
             ),
+            const SizedBox(
+              height: 30,
+            ),
+            FutureBuilder(
+                future: fetchImg(),
+                builder: (context, snapshot) {
+                  return GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2),
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final img = snapshot.data![index];
+                        return Expanded(
+                          child: Column(
+                            children: [
+                              Image.network(img['image']),
+                              Text(img['picture by']),
+                              Text(img['time']),
+                            ],
+                          ),
+                        );
+                      });
+                })
           ],
         ),
       ),
@@ -78,5 +101,27 @@ class _StorageHomeState extends State<StorageHome> {
     } catch (e) {
       print('Exception during fetching: $e');
     }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchImg() async {
+    List<Map<String, dynamic>> images = [];
+
+    //ListResult class holds the list of values and its metadata as a result of listAll
+    final ListResult result = await storage.ref().list();
+    //reference of each item stored in firebase storage
+    final List<Reference> allFiles = result.items;
+
+    await Future.forEach(allFiles, (single) async {
+      final String fileUrl = await single.getDownloadURL();
+      final FullMetadata metadata = await single.getMetadata();
+
+      images.add({
+        'image': fileUrl,
+        'path': single.fullPath,
+        'picture by': metadata.customMetadata?['uploadBy'],
+        'time': metadata.customMetadata?['time'],
+      });
+    });
+    return images;
   }
 }
