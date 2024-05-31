@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
@@ -51,26 +53,37 @@ class _StorageHomeState extends State<StorageHome> {
             const SizedBox(
               height: 30,
             ),
-            FutureBuilder(
-                future: fetchImg(),
-                builder: (context, snapshot) {
-                  return GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2),
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) {
-                        final img = snapshot.data![index];
-                        return Expanded(
-                          child: Column(
-                            children: [
-                              Image.network(img['image']),
-                              Text(img['picture by']),
-                              Text(img['time']),
-                            ],
-                          ),
-                        );
-                      });
-                })
+            Expanded(
+              child: FutureBuilder(
+                  future: fetchImg(),
+                  builder: (context, snapshot) {
+                    return GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                childAspectRatio: 0.6, crossAxisCount: 2),
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          final img = snapshot.data![index];
+                          return Card(
+                            child: Column(
+                              children: [
+                                Expanded(
+                                    child: Image.network(
+                                  img['image'],
+                                  fit: BoxFit.cover,
+                                )),
+                                Text(img['picture by']),
+                                Text(img['time']),
+                                IconButton(
+                                    onPressed: () {
+                                      deleteImg(img['path']);
+                                    }, icon: Icon(Icons.delete))
+                              ],
+                            ),
+                          );
+                        });
+                  }),
+            )
           ],
         ),
       ),
@@ -123,5 +136,12 @@ class _StorageHomeState extends State<StorageHome> {
       });
     });
     return images;
+  }
+
+  void deleteImg(String img) async{
+    await storage.ref(img).delete();
+    setState(() {
+
+    });
   }
 }
